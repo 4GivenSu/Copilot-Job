@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f2f5;
+      font-family: Arial, sans-serif;
+    }
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 { text-align: center; margin-bottom: 1.5rem; font-size: 1.6rem; color: #333; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; margin-bottom: 0.3rem; font-size: 0.9rem; color: #555; }
+    input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: #4a90e2; }
+    button {
+      width: 100%;
+      padding: 0.65rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      background: #4a90e2;
+      color: #fff;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.2s;
+    }
+    button:hover { background: #357abd; }
+    .message {
+      margin-top: 1rem;
+      padding: 0.7rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .message.success { background: #e6f4ea; color: #2d7a3a; }
+    .message.error   { background: #fdecea; color: #c62828; }
+    .token-box {
+      margin-top: 1rem;
+      background: #f5f5f5;
+      border-radius: 4px;
+      padding: 0.8rem;
+      font-size: 0.78rem;
+      word-break: break-all;
+      display: none;
+    }
+    .token-box strong { display: block; margin-bottom: 0.3rem; color: #333; }
+    .footer { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
+    .footer a { color: #4a90e2; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Log In</h1>
+
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="you@example.com" />
+  </div>
+
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Your password" />
+  </div>
+
+  <button onclick="login()">Log In</button>
+
+  <div class="message" id="msg"></div>
+
+  <div class="token-box" id="tokenBox">
+    <strong>Access Token (JWT):</strong>
+    <span id="tokenValue"></span>
+  </div>
+
+  <div class="footer">Don't have an account? <a href="register.html">Register</a></div>
+</div>
+
+<script>
+  const BASE = '';  // same origin; update if backend runs on a different port
+
+  function showMessage(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = 'message ' + type;
+    el.style.display = 'block';
+  }
+
+  async function login() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+      showMessage('Email and password are required.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showMessage(data.detail || 'Login failed.', 'error');
+        document.getElementById('tokenBox').style.display = 'none';
+      } else {
+        showMessage('Login successful!', 'success');
+        // Display the token so the user can copy it or it can be stored
+        localStorage.setItem('access_token', data.access_token);
+        document.getElementById('tokenValue').textContent = data.access_token;
+        document.getElementById('tokenBox').style.display = 'block';
+      }
+    } catch (e) {
+      showMessage('Network error. Please try again.', 'error');
+    }
+  }
+
+  // Allow pressing Enter in the password field to submit
+  document.getElementById('password').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') login();
+  });
+</script>
+</body>
+</html>
