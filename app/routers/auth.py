@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,12 +24,20 @@ from app.utils.jwt import create_access_token, decode_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 bearer_scheme = HTTPBearer()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/send-code", response_model=SendCodeResponse)
-async def send_code(body: SendCodeRequest, db: AsyncSession = Depends(get_db)):
+async def send_code(body: SendCodeRequest):
     """Send a 6-digit verification code to the given email address."""
-    await send_verification_code(body.email)
+    try:
+        await send_verification_code(body.email)
+    except Exception as exc:
+        logger.error("Failed to send verification code to %s: %s", body.email, exc)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Failed to send verification code. Please try again later.",
+        )
     return SendCodeResponse(message="Verification code sent. Please check your inbox.")
 
 
